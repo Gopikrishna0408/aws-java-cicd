@@ -5,7 +5,7 @@
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": "my-ec2-keypair"
+    "ParameterValue": "java-cicd-keypair-dev"
   },
   {
     "ParameterKey": "ArtifactBucket",
