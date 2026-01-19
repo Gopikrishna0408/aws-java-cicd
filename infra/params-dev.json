@@ -1,1 +1,15 @@
+[
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t2.micro"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "my-ec2-keypair"
+  },
+  {
+    "ParameterKey": "ArtifactBucket",
+    "ParameterValue": "java-cicd-artifacts-dev-123"
+  }
+]
 
