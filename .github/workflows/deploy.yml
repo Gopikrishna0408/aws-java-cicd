@@ -44,12 +44,12 @@ jobs:
       # 5️⃣ Create S3 bucket if it does not exist
       - name: Create S3 bucket
         run: |
-          aws s3 mb s3://java-cicd-artifacts-dev-123 || true
+          aws s3 mb s3://java-cicd-artifacts-dev || true
 
       # 6️⃣ Upload JAR to S3
       - name: Upload application JAR to S3
         run: |
-          aws s3 cp app/app.jar s3://java-cicd-artifacts-dev-123/app.jar
+          aws s3 cp app/app.jar s3://java-cicd-artifacts-dev/app.jar
 
       # 7️⃣ Deploy CloudFormation stack
       - name: Deploy CloudFormation stack
