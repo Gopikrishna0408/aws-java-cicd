@@ -1,1 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Java application deployment on EC2 using GitHub Actions OIDC
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: EC2 instance type
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 key pair name
+
+  ArtifactBucket:
+    Type: String
+    Description: S3 bucket where the application JAR is stored
+
+Resources:
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: ami-0fc5d935ebf8bc3bc   # Amazon Linux 2023 (us-east-1)
+      SecurityGroups:
+        - !Ref AppSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y java-17-amazon-corretto awscli
+          aws s3 cp s3://${ArtifactBucket}/app.jar /home/ec2-user/app.jar
+          nohup java -jar /home/ec2-user/app.jar > /home/ec2-user/app.log 2>&1 &
 
