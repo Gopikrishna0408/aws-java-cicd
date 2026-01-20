@@ -5,7 +5,6 @@ Parameters:
   InstanceType:
     Type: String
     Default: t2.micro
-    Description: EC2 instance type
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -19,26 +18,52 @@ Resources:
   AppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP access
+      GroupDescription: Allow SSH and application access
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 22
+          ToPort: 22
           CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
 
   AppInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      ImageId: ami-0fc5d935ebf8bc3bc   # Amazon Linux 2023 (us-east-1)
-      SecurityGroups:
+      ImageId: ami-0fc5d935ebf8bc3bc  # Amazon Linux 2023 (us-east-1)
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SecurityGroupIds:
         - !Ref AppSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
           yum update -y
           yum install -y java-17-amazon-corretto awscli
-          aws s3 cp s3://${ArtifactBucket}/app.jar /home/ec2-user/app.jar
-          nohup java -jar /home/ec2-user/app.jar > /home/ec2-user/app.log 2>&1 &
-
+          cd /home/ec2-user
+          aws s3 cp s3://${ArtifactBucket}/demo-0.0.1-SNAPSHOT.jar demo-0.0.1-SNAPSHOT.jar
+          chmod +x demo-0.0.1-SNAPSHOT.jar
+          nohup java -jar demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
