@@ -4,7 +4,7 @@ Description: Java application deployment on EC2 using GitHub Actions OIDC
 Parameters:
   InstanceType:
     Type: String
-    Default: t2.micro
+    Default: t3.micro
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
