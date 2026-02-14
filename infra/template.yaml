@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Java application deployment on EC2 using GitHub Actions OIDC
+Description: Java application deployment on EC2 using GitHub Actions
 
 Parameters:
   InstanceType:
@@ -64,18 +64,21 @@ Resources:
       SecurityGroupIds:
         - !Ref AppSecurityGroup
       Tags:
+        - Key: Name
+          Value: JavaAppInstance
         - Key: BuildVersion
           Value: !Ref BuildVersion
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          set -x
+          set -eux
           dnf update -y
           dnf install -y java-17-amazon-corretto awscli
+
           cd /home/ec2-user
           aws s3 cp s3://${ArtifactBucket}/demo-0.0.1-SNAPSHOT.jar demo.jar
           chown ec2-user:ec2-user demo.jar
-          sudo -u ec2-user nohup java -jar demo.jar > /home/ec2-user/app.log 2>&1 &
+          sudo -u ec2-user nohup java -jar demo.jar > app.log 2>&1 &
 
 Outputs:
   InstancePublicIP:
