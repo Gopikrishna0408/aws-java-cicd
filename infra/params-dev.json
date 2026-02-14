@@ -10,6 +10,9 @@
   {
     "ParameterKey": "ArtifactBucket",
     "ParameterValue": "java-cicd-artifacts-dev-123"
+  },
+  {
+    "ParameterKey": "BuildVersion",
+    "ParameterValue": "1"
   }
 ]
-
