@@ -4,7 +4,7 @@ Description: Java application deployment on EC2 using GitHub Actions OIDC
 Parameters:
   InstanceType:
     Type: String
-    Default: t3.micro
+    Default: t2.micro
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -14,7 +14,12 @@ Parameters:
     Type: String
     Description: S3 bucket where the application JAR is stored
 
+  BuildVersion:
+    Type: String
+    Description: Dummy parameter to force stack update
+
 Resources:
+
   AppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -30,21 +35,49 @@ Resources:
           ToPort: 8080
           CidrIp: 0.0.0.0/0
 
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
   AppInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      ImageId: ami-0fc5d935ebf8bc3bc  # Amazon Linux 2023 (us-east-1)
+      ImageId: ami-0fc5d935ebf8bc3bc   # Amazon Linux 2023 (us-east-1)
+      IamInstanceProfile: !Ref EC2InstanceProfile
       SecurityGroupIds:
         - !Ref AppSecurityGroup
+      Tags:
+        - Key: BuildVersion
+          Value: !Ref BuildVersion
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
           set -x
-          yum update -y
-          yum install -y java-17-amazon-corretto awscli
+          dnf update -y
+          dnf install -y java-17-amazon-corretto awscli
           cd /home/ec2-user
-          aws s3 cp s3://${ArtifactBucket}/demo-0.0.1-SNAPSHOT.jar demo-0.0.1-SNAPSHOT.jar
-          chmod 755 demo-0.0.1-SNAPSHOT.jar
-          nohup java -jar demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+          aws s3 cp s3://${ArtifactBucket}/demo-0.0.1-SNAPSHOT.jar demo.jar
+          chown ec2-user:ec2-user demo.jar
+          sudo -u ec2-user nohup java -jar demo.jar > /home/ec2-user/app.log 2>&1 &
+
+Outputs:
+  InstancePublicIP:
+    Description: Public IP of EC2 instance
+    Value: !GetAtt AppInstance.PublicIp
