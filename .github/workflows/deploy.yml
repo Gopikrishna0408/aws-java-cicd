@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source code
+      # 1️⃣ Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -25,38 +25,40 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3️⃣ Build Java application
+      # 3️⃣ Build
       - name: Build Java application
         run: |
           cd app
           mvn clean package
-          ls -l target
           cp target/demo-0.0.1-SNAPSHOT.jar demo-0.0.1-SNAPSHOT.jar
 
-      # 4️⃣ Configure AWS credentials using OIDC
+      # 4️⃣ Configure AWS credentials
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::515966497293:role/GitHubActionsJavaCICDRole
           aws-region: us-east-1
 
-      # 5️⃣ Create S3 bucket if it does not exist
+      # 5️⃣ Create S3 bucket if not exists
       - name: Create S3 bucket
         run: |
-          aws s3 mb s3://java-cicd-artifacts-dev || true
+          aws s3 mb s3://java-cicd-artifacts-dev-123 || true
 
-      # 6️⃣ Upload JAR to S3
-      - name: Upload application JAR to S3
+      # 6️⃣ Upload JAR
+      - name: Upload JAR to S3
         run: |
           aws s3 cp app/demo-0.0.1-SNAPSHOT.jar \
-            s3://java-cicd-artifacts-dev/demo-0.0.1-SNAPSHOT.jar
+            s3://java-cicd-artifacts-dev-123/demo-0.0.1-SNAPSHOT.jar
 
-      # 7️⃣ Deploy CloudFormation stack
+      # 7️⃣ Deploy Stack
       - name: Deploy CloudFormation stack
         run: |
           aws cloudformation deploy \
             --template-file infra/template.yaml \
             --stack-name java-cicd-dev \
-            --parameter-overrides file://infra/params-dev.json \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --no-fail-on-empty-changeset
+            --parameter-overrides \
+              InstanceType=t2.micro \
+              KeyName=java-cicd-keypair-dev \
+              ArtifactBucket=java-cicd-artifacts-dev-123 \
+              BuildVersion=${{ github.run_number }} \
+            --capabilities CAPABILITY_NAMED_IAM
