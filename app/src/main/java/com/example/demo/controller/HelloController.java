@@ -10,7 +10,7 @@ public class HelloController {
 
     @GetMapping("/hello")
     public String hello() {
-        return "Hello from EC2 CI/CD!";
+        return "Hello Urmila welcome to aws EC2 CI/CD! platform";
     }
 
     @GetMapping("/home")
